@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexo Tecnologia - Painel SaaS</title>
+    
+    <!-- ================= CONFIGURAÇÕES PWA ================= -->
+    <meta name="theme-color" content="#09090b"> <!-- Cor da barra de status do celular -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Nexo Admin">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon-192x192.png"> <!-- Crie essa imagem depois -->
+    <!-- ======================================================= -->
+
+    <!-- AVISO DE PROTOCOLO LOCAL -->
+    <script>
+        if (window.location.protocol === 'file:') {
+            console.warn("Nexo Admin: Executando localmente. É recomendado um servidor Web para 100% de estabilidade.");
+        }
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        :root {
+            --bg-dark: #09090b;
+            --card-dark: #12101a;
+            --neon-purple: #a855f7;
+            --neon-glow: rgba(168, 85, 247, 0.4);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior: none;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* EFEITO PULSANTE DA LOGO VETORIAL */
+        @keyframes pulse-glow {
+            0% { filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.4)); transform: scale(0.98); }
+            100% { filter: drop-shadow(0 0 25px rgba(168, 85, 247, 0.9)) drop-shadow(0 0 45px rgba(168, 85, 247, 0.5)); transform: scale(1.02); }
+        }
+        
+        .animate-pulse-glow { animation: pulse-glow 2s infinite alternate ease-in-out; }
+        .fade-out { animation: fadeOut 0.4s forwards cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes fadeOut { to { opacity: 0; visibility: hidden; transform: scale(1.05); } }
+        
+        .slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .scale-in { animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .glass-card {
+            background: linear-gradient(145deg, rgba(28,27,34,0.8) 0%, rgba(18,16,26,0.9) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border-radius: 1.25rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(180deg, rgba(30,27,46,0.9) 0%, rgba(15,14,20,0.95) 100%);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 1.25rem;
+            box-shadow: 0 4px 20px rgba(168, 85, 247, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .input-dark {
+            background-color: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .input-dark:focus {
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+            outline: none;
+            background-color: rgba(168, 85, 247, 0.05);
+        }
+        
+        select { -webkit-appearance: none; appearance: none; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col relative overflow-hidden">
+
+    <!-- ================= SISTEMA CUSTOMIZADO DE ALERTAS / POP-UPS ================= -->
+    <div id="custom-dialog" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[99999] hidden flex-col items-center justify-center opacity-0 transition-opacity duration-300 p-4">
+        <div class="bg-[#12101a] border border-[#2a2931] w-full max-w-[320px] rounded-[2rem] shadow-2xl p-6 text-center relative transform scale-95 transition-transform duration-300" id="custom-dialog-content">
+            <div id="dialog-icon" class="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 border"></div>
+            <h3 id="dialog-title" class="text-xl font-black text-white mb-2 tracking-wide">Título</h3>
+            <p id="dialog-msg" class="text-sm text-gray-400 mb-8 leading-relaxed">Mensagem</p>
+            <div class="flex gap-3" id="dialog-buttons"></div>
+        </div>
+    </div>
+
+    <!-- TELA DE LOGIN DO ADMIN -->
+    <div id="admin-login" class="fixed inset-0 w-screen h-screen z-[100] flex flex-col items-center justify-center bg-[#09090b] px-6 overflow-hidden">
+        <!-- Efeitos de Fundo -->
+        <div class="absolute top-0 right-0 w-[40vh] h-[40vh] rounded-full opacity-20 bg-purple-600 blur-[100px] transform translate-x-1/3 -translate-y-1/3 pointer-events-none"></div>
+        <div class="absolute bottom-0 left-0 w-[40vh] h-[40vh] rounded-full opacity-10 bg-blue-600 blur-[100px] transform -translate-x-1/3 translate-y-1/3 pointer-events-none"></div>
+
+        <div class="bg-[#12101a]/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-purple-500/20 shadow-[0_0_50px_rgba(168,85,247,0.15)] w-full max-w-[360px] relative z-10 animate-slideup flex flex-col items-center">
+            
+            <!-- LOGO VETORIAL ANIMADA (LOGIN) -->
+            <div class="w-24 h-24 mb-4 relative flex items-center justify-center animate-pulse-glow">
+                <div class="absolute inset-0 bg-purple-600 blur-[25px] opacity-40 rounded-full"></div>
+                <!-- Drop shadow escuro no SVG para destacar o elemento base -->
+                <svg viewBox="0 0 100 100" class="w-full h-full relative z-10" style="filter: drop-shadow(0px 4px 15px rgba(0, 0, 0, 0.9));" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="nexoGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#e9d5ff" />
+                            <stop offset="50%" stop-color="#a855f7" />
+                            <stop offset="100%" stop-color="#581c87" />
+                        </linearGradient>
+                    </defs>
+                    <rect x="24" y="20" width="14" height="60" rx="7" fill="url(#nexoGrad1)" />
+                    <rect x="62" y="20" width="14" height="60" rx="7" fill="url(#nexoGrad1)" />
+                    <rect x="43" y="14" width="14" height="72" rx="7" fill="url(#nexoGrad1)" transform="rotate(-35 50 50)" />
+                </svg>
+            </div>
+            
+            <h2 class="text-2xl font-black text-white text-center mb-0.5 tracking-wide">NEXO <span class="font-light text-purple-400">SaaS</span></h2>
+            <p class="text-purple-500/80 text-[10px] font-bold text-center mb-8 uppercase tracking-widest">Painel Administrativo</p>
+            
+            <form onsubmit="loginAdmin(event)" class="space-y-4 w-full">
+                <div>
+                    <label class="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 ml-2">ID Usuário</label>
+                    <input type="text" id="admin-user" required placeholder="Master Admin ID" class="input-dark w-full px-4 py-3.5 rounded-2xl text-sm font-medium text-center tracking-wider">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 ml-2">Chave de Acesso</label>
+                    <input type="password" id="admin-pass" required placeholder="••••••••" class="input-dark w-full px-4 py-3.5 rounded-2xl text-sm font-medium text-center tracking-widest">
+                </div>
+                <button type="submit" id="btn-login-admin" class="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white font-bold py-3.5 rounded-2xl mt-4 transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95 flex justify-center items-center text-sm uppercase tracking-widest">
+                    Autenticar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TELA DE LOADING INICIAL -->
+    <div id="splash-screen" class="absolute inset-0 z-50 hidden flex-col items-center justify-center bg-[#09090b]">
+        <!-- LOGO VETORIAL (SPLASH) -->
+        <div class="w-32 h-32 relative flex items-center justify-center animate-pulse-glow">
+            <!-- Sombra Adicionada -->
+            <svg viewBox="0 0 100 100" class="w-full h-full relative z-10" style="filter: drop-shadow(0px 4px 15px rgba(0, 0, 0, 0.9));" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="nexoGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#e9d5ff" />
+                        <stop offset="50%" stop-color="#a855f7" />
+                        <stop offset="100%" stop-color="#581c87" />
+                    </linearGradient>
+                </defs>
+                <rect x="24" y="20" width="14" height="60" rx="7" fill="url(#nexoGrad2)" />
+                <rect x="62" y="20" width="14" height="60" rx="7" fill="url(#nexoGrad2)" />
+                <rect x="43" y="14" width="14" height="72" rx="7" fill="url(#nexoGrad2)" transform="rotate(-35 50 50)" />
+            </svg>
+        </div>
+        <p class="mt-8 text-purple-400 font-bold tracking-widest text-[10px] uppercase animate-pulse">Sincronizando Nodes...</p>
+    </div>
+
+    <!-- APLICATIVO PRINCIPAL (DASHBOARD) -->
+    <div id="main-app" class="hidden h-full flex-col relative">
+        <!-- HEADER ESTILO APP -->
+        <header class="pt-10 pb-4 px-6 bg-[#09090b] relative z-20 flex flex-col items-center">
+            <div class="absolute top-0 w-full h-32 bg-purple-900/20 blur-[50px] pointer-events-none"></div>
+            
+            <!-- LOGO VETORIAL (HEADER) -->
+            <div class="w-14 h-14 mb-1 relative z-10 flex items-center justify-center" style="filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.6));">
+                <!-- Sombra Adicionada -->
+                <svg viewBox="0 0 100 100" class="w-full h-full" style="filter: drop-shadow(0px 2px 8px rgba(0, 0, 0, 0.9));" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="nexoGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#e9d5ff" />
+                            <stop offset="50%" stop-color="#a855f7" />
+                            <stop offset="100%" stop-color="#581c87" />
+                        </linearGradient>
+                    </defs>
+                    <rect x="24" y="20" width="14" height="60" rx="7" fill="url(#nexoGrad3)" />
+                    <rect x="62" y="20" width="14" height="60" rx="7" fill="url(#nexoGrad3)" />
+                    <rect x="43" y="14" width="14" height="72" rx="7" fill="url(#nexoGrad3)" transform="rotate(-35 50 50)" />
+                </svg>
+            </div>
+
+            <h1 class="text-white font-bold text-xl tracking-widest relative z-10">NEXO <span class="text-purple-500 font-light">SaaS</span></h1>
+            
+            <div class="absolute top-10 right-5 flex items-center gap-3">
+                <button onclick="abrirModalConfig()" class="text-gray-400 hover:text-white transition-colors flex items-center gap-2 text-xs font-semibold bg-white/5 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md active:scale-95">
+                    <i class="fa-regular fa-user-circle text-purple-400 text-sm"></i> Admin
+                </button>
+                <button onclick="logoutAdmin()" class="w-8 h-8 rounded-full bg-red-500/10 text-red-500 border border-red-500/20 flex items-center justify-center active:scale-90 transition-transform">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-4 pb-28 relative z-10 no-scrollbar">
+            
+            <!-- GRIDS DE ESTATÍSTICAS ALINHADAS AO CENTRO -->
+            <div class="grid grid-cols-2 gap-3 mb-6 slide-up" style="animation-delay: 0.1s;">
+                <!-- CARD 1 -->
+                <div class="stat-card p-4 flex flex-col h-32 relative">
+                    <div class="z-10 w-full text-center">
+                        <p class="text-[9px] text-gray-300 font-bold uppercase tracking-widest">Total Empresas</p>
+                    </div>
+                    <div class="flex-1 flex items-center justify-center z-10 pb-2">
+                        <h3 class="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" id="dash-total">0</h3>
+                    </div>
+                    <svg viewBox="0 0 100 30" class="absolute bottom-0 left-0 w-full h-12 opacity-60" preserveAspectRatio="none">
+                        <path d="M0,20 Q15,5 30,15 T60,15 T100,5 L100,30 L0,30 Z" fill="url(#grad1)" opacity="0.3"/>
+                        <path d="M0,20 Q15,5 30,15 T60,15 T100,5" fill="none" stroke="#a855f7" stroke-width="2"/>
+                        <defs><linearGradient id="grad1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="transparent"/></linearGradient></defs>
+                    </svg>
+                </div>
+                
+                <!-- CARD 2 -->
+                <div class="stat-card p-4 flex flex-col h-32 relative">
+                    <div class="absolute top-3 right-3 z-20">
+                        <span class="bg-green-500/20 text-green-400 text-[9px] font-bold px-2 py-0.5 rounded-full border border-green-500/30 shadow-[0_0_10px_rgba(34,197,94,0.2)]" id="dash-ativas-badge">0%</span>
+                    </div>
+                    <div class="z-10 w-full text-center pr-6">
+                        <p class="text-[9px] text-gray-300 font-bold uppercase tracking-widest">Ativas</p>
+                    </div>
+                    <div class="flex-1 flex items-center justify-center z-10 pb-2">
+                        <h3 class="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" id="dash-ativas">0</h3>
+                    </div>
+                    <svg viewBox="0 0 100 30" class="absolute bottom-0 left-0 w-full h-12 opacity-60" preserveAspectRatio="none">
+                        <path d="M0,25 Q20,10 40,20 T80,10 T100,20 L100,30 L0,30 Z" fill="url(#grad1)" opacity="0.3"/>
+                        <path d="M0,25 Q20,10 40,20 T80,10 T100,20" fill="none" stroke="#a855f7" stroke-width="2"/>
+                    </svg>
+                </div>
+                
+                <!-- CARD 3 -->
+                <div class="stat-card p-4 flex flex-col h-32 relative">
+                    <div class="absolute top-3 right-3 z-20">
+                        <div class="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 text-[10px] font-black border border-orange-500/30" id="dash-pendentes-badge">0</div>
+                    </div>
+                    <div class="z-10 w-full text-center pr-6">
+                        <p class="text-[9px] text-gray-300 font-bold uppercase tracking-widest">Pendentes</p>
+                    </div>
+                    <div class="flex-1 flex items-center justify-center z-10 pb-2">
+                        <h3 class="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" id="dash-pendentes">0</h3>
+                    </div>
+                </div>
+                
+                <!-- CARD 4 (BARRAS) -->
+                <div class="stat-card p-4 flex flex-col h-32 bg-gradient-to-br from-[#121b22] to-[#0f172a] relative border-emerald-500/20">
+                    <div class="z-10 w-full text-center">
+                        <p class="text-[9px] text-gray-300 font-bold uppercase tracking-widest">Faturamento</p>
+                    </div>
+                    <div class="flex-1 flex items-center justify-center z-10 pb-4">
+                        <h3 class="text-2xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]" id="dash-faturamento">R$ 0,00</h3>
+                    </div>
+                    <div class="flex items-end justify-between h-8 w-full gap-1 opacity-70 mt-1 absolute bottom-0 left-0 px-4 pb-2 z-0 pointer-events-none">
+                        <div class="w-full bg-purple-500 rounded-t-sm" style="height: 40%"></div>
+                        <div class="w-full bg-purple-500 rounded-t-sm" style="height: 70%"></div>
+                        <div class="w-full bg-purple-500 rounded-t-sm" style="height: 50%"></div>
+                        <div class="w-full bg-purple-500 rounded-t-sm" style="height: 100%"></div>
+                        <div class="w-full bg-purple-500 rounded-t-sm" style="height: 80%"></div>
+                        <div class="w-full bg-purple-500 rounded-t-sm" style="height: 60%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LISTA DE EMPRESAS GERENCIADAS -->
+            <h2 class="text-[13px] text-gray-300 font-bold mb-3 slide-up" style="animation-delay: 0.2s;">Empresas Gerenciadas (Tenants)</h2>
+            <div id="lista-empresas" class="space-y-3 slide-up" style="animation-delay: 0.3s;">
+                <div class="glass-card p-5 animate-pulse h-28"></div>
+                <div class="glass-card p-5 animate-pulse h-28"></div>
+            </div>
+            
+            <!-- ÚLTIMAS ATIVIDADES DO SISTEMA (LOG) -->
+            <div class="mt-8 slide-up" style="animation-delay: 0.4s;">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-[13px] text-gray-300 font-bold">Últimas Atividades</h2>
+                </div>
+                <div class="glass-card p-5" id="lista-atividades">
+                    <div class="text-center py-4 text-gray-600 font-bold text-xs"><i class="fa-solid fa-circle-notch fa-spin"></i> Carregando log...</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- MENU INFERIOR FLUTUANTE (FAB) -->
+        <div class="fixed bottom-6 w-full flex justify-center z-40 px-6 gap-4 slide-up" style="animation-delay: 0.5s;">
+            <button onclick="abrirModalComunicado()" class="flex-1 bg-[#1c1b22] border border-purple-500/30 text-purple-400 font-bold py-3.5 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 backdrop-blur-xl">
+                <i class="fa-solid fa-bullhorn"></i> Aviso Geral
+            </button>
+            <button onclick="abrirModalCadastro()" class="flex-1 bg-purple-600 border border-purple-400 text-white font-bold py-3.5 rounded-2xl shadow-[0_0_20px_rgba(168,85,247,0.5)] active:scale-95 transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-plus"></i> Novo Cliente
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= MODAIS ================= -->
+
+    <!-- MODAL 1: CADASTRAR CLIENTE -->
+    <div id="modal-cliente" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col justify-end md:justify-center items-center opacity-0 transition-opacity duration-300">
+        <div class="bg-[#12101a] w-full md:max-w-xl max-h-[90vh] overflow-y-auto rounded-t-[2rem] md:rounded-[2rem] p-6 border border-purple-500/30 transform translate-y-full transition-transform duration-300 shadow-2xl no-scrollbar relative" id="modal-content-cadastro">
+            <div class="flex justify-between items-center mb-6 sticky top-0 bg-[#12101a] py-2 z-10 border-b border-[#2a2931]">
+                <h3 class="text-xl font-black text-white">Adicionar Tenant</h3>
+                <button type="button" onclick="fecharModalCadastro()" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white bg-white/5 border border-white/10 rounded-full active:scale-90">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="form-novo-cliente" class="space-y-4 pb-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-[10px] text-purple-400 font-bold uppercase tracking-widest mb-1.5 ml-1">Nome da Empresa</label>
+                        <input type="text" id="nome-empresa" required placeholder="Ex: Nexo Viagens" class="input-dark w-full p-3.5 rounded-xl text-sm">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] text-purple-400 font-bold uppercase tracking-widest mb-1.5 ml-1">CPF ou CNPJ</label>
+                        <input type="text" id="doc-empresa" required placeholder="Apenas números" class="input-dark w-full p-3.5 rounded-xl text-sm">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] text-purple-400 font-bold uppercase tracking-widest mb-1.5 ml-1">Telefone / WhatsApp</label>
+                        <input type="text" id="tel-empresa" placeholder="(00) 00000-0000" class="input-dark w-full p-3.5 rounded-xl text-sm">
+                    </div>
+                    
+                    <div class="col-span-2 border-t border-[#2a2931] mt-2 pt-4">
+                        <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fa-solid fa-file-contract text-sm"></i> Plano & Assinatura</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 ml-1">Plano</label>
+                        <select id="plano-empresa" class="input-dark w-full p-3.5 rounded-xl text-sm cursor-pointer font-semibold text-white">
+                            <option value="Mensal" class="bg-[#12101a]">Mensal</option>
+                            <option value="Trimestral" class="bg-[#12101a]">Trimestral</option>
+                            <option value="Anual" class="bg-[#12101a]">Anual</option>
+                            <option value="Vitalício" class="bg-[#12101a]">Vitalício</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 ml-1">Valor (R$)</label>
+                        <input type="number" id="valor-empresa" step="0.01" placeholder="0.00" class="input-dark w-full p-3.5 rounded-xl text-sm">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 ml-1">1º Vencimento</label>
+                        <input type="date" id="venc-empresa" class="input-dark w-full p-3.5 rounded-xl text-sm" style="color-scheme: dark;">
+                    </div>
+
+                    <div class="col-span-2 border-t border-[#2a2931] mt-2 pt-4">
+                        <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fa-solid fa-user-lock text-sm"></i> Credenciais FRP</p>
+                    </div>
+
+                    <div class="col-span-2">
+                        <label class="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 ml-1">E-mail de Login</label>
+                        <input type="email" id="email-cliente" required placeholder="contato@empresa.com" class="input-dark w-full p-3.5 rounded-xl text-sm">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 ml-1">Senha Inicial (Mín. 6)</label>
+                        <input type="text" id="senha-cliente" required minlength="6" placeholder="Senha provisória" class="input-dark w-full p-3.5 rounded-xl text-sm">
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-cadastrar" class="w-full bg-purple-600 text-white font-bold py-4 rounded-xl mt-6 shadow-[0_0_15px_rgba(168,85,247,0.4)] active:scale-95 transition-transform flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-server"></i> Implantar Sistema
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: GERENCIAR CLIENTE EXISTENTE -->
+    <div id="modal-gerenciar" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col justify-end md:justify-center items-center opacity-0 transition-opacity duration-300">
+        <div class="bg-[#12101a] w-full md:max-w-md max-h-[90vh] overflow-y-auto rounded-t-[2rem] md:rounded-[2rem] p-6 border border-purple-500/30 transform translate-y-full transition-transform duration-300 shadow-2xl no-scrollbar relative" id="modal-content-gerenciar">
+            
+            <div class="flex justify-between items-start mb-6 border-b border-[#2a2931] pb-4 sticky top-0 bg-[#12101a] z-10">
+                <div>
+                    <h3 class="text-xl font-black text-white leading-tight" id="manage-nome">Nome da Empresa</h3>
+                    <p class="text-[10px] text-purple-400 font-bold tracking-widest uppercase mt-1" id="manage-id">ID: 12345</p>
+                </div>
+                <button type="button" onclick="fecharModalGerenciar()" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white bg-white/5 border border-white/10 rounded-full active:scale-90">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <!-- CONTROLES RÁPIDOS -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white/5 border border-white/10 p-3.5 rounded-xl text-center">
+                        <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-2">Acesso FRP</p>
+                        <button id="btn-status" onclick="toggleStatus()" class="w-full py-2 rounded-lg text-xs font-bold transition-all shadow-md"></button>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 p-3.5 rounded-xl text-center">
+                        <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-2">Mensalidade</p>
+                        <button id="btn-pagamento" onclick="togglePagamento()" class="w-full py-2 rounded-lg text-xs font-bold transition-all shadow-md"></button>
+                    </div>
+                </div>
+
+                <!-- DADOS DA ASSINATURA -->
+                <div class="mt-4 bg-[#1a1726] border border-purple-500/20 p-4 rounded-xl">
+                    <h4 class="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><i class="fa-solid fa-pen-to-square"></i> Modificar Assinatura</h4>
+                    <div class="space-y-3">
+                        <select id="edit-plano" class="input-dark w-full p-3 rounded-lg text-sm cursor-pointer text-white font-semibold">
+                            <option value="Mensal" class="bg-[#12101a]">Mensal</option>
+                            <option value="Trimestral" class="bg-[#12101a]">Trimestral</option>
+                            <option value="Anual" class="bg-[#12101a]">Anual</option>
+                            <option value="Vitalício" class="bg-[#12101a]">Vitalício</option>
+                        </select>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[9px] font-bold text-gray-500 uppercase ml-1">Valor (R$)</label>
+                                <input type="number" id="edit-valor" step="0.01" class="input-dark w-full p-3 rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label class="text-[9px] font-bold text-gray-500 uppercase ml-1">Vencimento</label>
+                                <input type="date" id="edit-venc" class="input-dark w-full p-3 rounded-lg text-sm" style="color-scheme: dark;">
+                            </div>
+                        </div>
+                        <button onclick="salvarAssinatura()" class="w-full bg-white/10 hover:bg-purple-600 border border-white/10 text-white font-bold py-3 rounded-lg text-xs transition-colors active:scale-95">Salvar Atualização</button>
+                    </div>
+                </div>
+
+                <!-- NOTIFICAR CLIENTE INDIVIDUALMENTE -->
+                <div class="mt-4 bg-[#1a1726] border border-blue-500/20 p-4 rounded-xl">
+                    <h4 class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><i class="fa-solid fa-paper-plane"></i> Push Direto (FRP)</h4>
+                    <input type="text" id="notif-titulo" placeholder="Título da Mensagem" class="input-dark w-full p-3 rounded-lg text-sm mb-2 font-bold">
+                    <textarea id="notif-msg" rows="2" placeholder="Digite o alerta aqui..." class="input-dark w-full p-3 rounded-lg text-sm mb-3 no-scrollbar"></textarea>
+                    <button onclick="enviarNotificacaoIndividual()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-xs transition-colors shadow-md active:scale-95">Enviar Agora</button>
+                </div>
+
+                <div class="pt-4 mt-4 border-t border-[#2a2931]">
+                    <button onclick="confirmarExclusao()" class="w-full bg-red-500/10 border border-red-500/30 text-red-500 font-bold py-3.5 rounded-xl text-xs transition-colors flex justify-center items-center gap-2 active:scale-95">
+                        <i class="fa-solid fa-trash-can"></i> Deletar Sistema do Cliente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: COMUNICADO GERAL -->
+    <div id="modal-comunicado" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col justify-end md:justify-center items-center opacity-0 transition-opacity duration-300">
+        <div class="bg-[#12101a] w-full md:max-w-md rounded-t-[2rem] md:rounded-[2rem] p-6 border border-purple-500/30 transform translate-y-full transition-transform duration-300 shadow-2xl" id="modal-content-comunicado">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-black text-white">Comunicado Oficial</h3>
+                    <p class="text-[10px] text-purple-400 font-bold tracking-widest uppercase mt-0.5">Push para todos os tenants</p>
+                </div>
+                <button type="button" onclick="fecharModalComunicado()" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white bg-white/5 border border-white/10 rounded-full active:scale-90">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <input type="text" id="com-titulo" placeholder="Título Oficial (Ex: Atualização)" class="input-dark w-full p-3.5 rounded-xl mb-3 font-bold text-sm">
+            <textarea id="com-msg" rows="4" placeholder="Escreva a mensagem que aparecerá no sininho de todos os clientes..." class="input-dark w-full p-3.5 rounded-xl mb-4 text-sm"></textarea>
+            
+            <button onclick="enviarComunicadoGeral()" class="w-full bg-purple-600 text-white font-bold py-4 rounded-xl shadow-[0_0_15px_rgba(168,85,247,0.4)] active:scale-95 transition-transform flex items-center justify-center gap-2">
+                <i class="fa-solid fa-satellite-dish"></i> Disparar para Todos
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 4: CONFIGURAÇÕES (SENHA ADMIN) -->
+    <div id="modal-config" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col justify-end md:justify-center items-center opacity-0 transition-opacity duration-300">
+        <div class="bg-[#12101a] w-full md:max-w-sm rounded-t-[2rem] md:rounded-[2rem] p-6 border border-purple-500/30 transform translate-y-full transition-transform duration-300 shadow-2xl" id="modal-content-config">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-black text-white">Segurança</h3>
+                    <p class="text-[10px] text-purple-400 font-bold tracking-widest uppercase mt-0.5">Credenciais Root</p>
+                </div>
+                <button type="button" onclick="fecharModalConfig()" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white bg-white/5 border border-white/10 rounded-full active:scale-90">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 ml-1">Novo ID de Acesso</label>
+                    <input type="text" id="cfg-user" placeholder="AdminUser" class="input-dark w-full p-3.5 rounded-xl text-sm font-medium">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 ml-1">Nova Senha Master</label>
+                    <input type="password" id="cfg-pass" placeholder="••••••••" class="input-dark w-full p-3.5 rounded-xl text-sm font-medium">
+                </div>
+                <button onclick="salvarCredenciaisAdmin()" class="w-full bg-purple-600 text-white font-bold py-3.5 rounded-xl shadow-[0_0_15px_rgba(168,85,247,0.4)] active:scale-95 mt-2 transition-transform">
+                    Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PWA: SERVICE WORKER REGISTRATION ================= -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((reg) => console.log('PWA: Service Worker registrado. Escopo:', reg.scope))
+                    .catch((err) => console.error('PWA: Falha ao registrar Service Worker:', err));
+            });
+        }
+    </script>
+    <!-- ==================================================================== -->
+
+    <!-- SCRIPTS FIREBASE E LÓGICA -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, setDoc, doc, onSnapshot, getDocs, getDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAxyVFfsSBS1dNtBfiJoNHqkE5LyxUTRFI",
+            authDomain: "nexo-crm-5325f.firebaseapp.com",
+            projectId: "nexo-crm-5325f",
+            storageBucket: "nexo-crm-5325f.firebasestorage.app",
+            messagingSenderId: "145983577119",
+            appId: "1:145983577119:web:003e53b89437cfb1b4092a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const appSecundario = initializeApp(firebaseConfig, "AppCriador");
+        const authSecundario = getAuth(appSecundario);
+
+        // ================= GERENCIADOR DE ÁUDIO (NATIVO WEB AUDIO API) =================
+        window.SoundManager = {
+            ctx: null,
+            init: function() {
+                try {
+                    if (!this.ctx) {
+                        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if (this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                } catch(e) { console.warn("Web Audio API não suportada", e); }
+            },
+            play: function(freq, type, duration, vol) {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            },
+            click: function() { this.play(600, 'sine', 0.1, 0.05); },
+            success: function() { 
+                this.play(400, 'sine', 0.1, 0.05); 
+                setTimeout(() => this.play(600, 'sine', 0.2, 0.05), 100); 
+            },
+            error: function() { 
+                this.play(250, 'square', 0.15, 0.05); 
+                setTimeout(() => this.play(200, 'square', 0.2, 0.05), 150); 
+            },
+            login: function() {
+                this.play(523.25, 'sine', 0.1, 0.05); // C5
+                setTimeout(() => this.play(659.25, 'sine', 0.1, 0.05), 100); // E5
+                setTimeout(() => this.play(783.99, 'sine', 0.3, 0.05), 200); // G5
+            }
+        };
+
+        let clienteSelecionado = null;
+        let unsubscribeEmpresas = null;
+        let unsubscribeAtividades = null;
+
+        const fmtMoeda = (v) => `R$ ${Number(v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g,'.')}`;
+        const tempoAtras = (ms) => {
+            if(!ms) return 'agora mesmo';
+            const seg = Math.floor((Date.now() - ms) / 1000);
+            if (seg < 60) return `${seg} seg atrás`;
+            if (seg < 3600) return `${Math.floor(seg/60)} min atrás`;
+            if (seg < 86400) return `${Math.floor(seg/3600)} horas atrás`;
+            return `${Math.floor(seg/86400)} dias atrás`;
+        }
+
+        // ================= SISTEMA DE REGISTRO DE ATIVIDADES GLOBAIS =================
+        window.registrarAtividade = async function(texto, icone = "fa-bolt") {
+            try {
+                addDoc(collection(db, "atividades"), {
+                    texto: texto,
+                    icone: icone,
+                    timestamp: Date.now()
+                }); // Execução otimizada (sem await) para não travar a tela
+            } catch(e) { console.error("Erro ao registrar atividade:", e); }
+        }
+
+        function escutarAtividades() {
+            unsubscribeAtividades = onSnapshot(collection(db, "atividades"), (snapshot) => {
+                let acts =[];
+                snapshot.forEach(doc => acts.push({id: doc.id, ...doc.data()}));
+                acts.sort((a,b) => b.timestamp - a.timestamp);
+                
+                const listDiv = document.getElementById('lista-atividades');
+                if(acts.length === 0) {
+                    listDiv.innerHTML = '<div class="text-center py-4 text-gray-600 font-bold text-xs">Nenhuma atividade recente.</div>';
+                    return;
+                }
+                
+                listDiv.innerHTML = acts.slice(0, 10).map(a => `
+                    <div class="flex gap-3 mb-4 last:mb-0">
+                        <div class="flex flex-col items-center">
+                            <div class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center text-[10px] shadow-[0_0_10px_rgba(168,85,247,0.3)]"><i class="fa-solid ${a.icone}"></i></div>
+                            <div class="w-px h-full bg-gradient-to-b from-[#2a2931] to-transparent mt-1 hidden last:block"></div>
+                        </div>
+                        <div class="pb-1 flex-1">
+                            <p class="text-xs text-gray-300 font-medium leading-tight">${a.texto}</p>
+                            <p class="text-[9px] text-gray-500 uppercase font-bold mt-1 tracking-wider">${tempoAtras(a.timestamp)}</p>
+                        </div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        // ================= SISTEMA DE ALERTAS POP-UP CUSTOMIZADO =================
+        window.showAlert = function(title, msg, type = 'success') {
+            const d = document.getElementById('custom-dialog');
+            const c = document.getElementById('custom-dialog-content');
+            const icon = document.getElementById('dialog-icon');
+            
+            document.getElementById('dialog-title').innerText = title;
+            document.getElementById('dialog-msg').innerText = msg;
+            
+            SoundManager.init();
+
+            if(type === 'success') {
+                icon.className = "mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 border bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.3)]";
+                icon.innerHTML = '<i class="fa-solid fa-check text-2xl"></i>';
+                SoundManager.success();
+            } else if (type === 'error' || type === 'warning') {
+                icon.className = "mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 border bg-red-500/10 border-red-500/30 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]";
+                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-2xl"></i>';
+                SoundManager.error();
+            }
+
+            document.getElementById('dialog-buttons').innerHTML = `
+                <button onclick="closeDialog()" class="flex-1 py-3.5 rounded-xl font-bold text-white bg-purple-600 shadow-[0_0_15px_rgba(168,85,247,0.4)] active:scale-95 transition-transform tracking-widest uppercase text-sm">Entendi</button>
+            `;
+
+            d.classList.remove('hidden'); d.classList.add('flex');
+            setTimeout(() => { d.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10);
+        }
+
+        window.showConfirm = function(title, msg, onConfirmCallback) {
+            const d = document.getElementById('custom-dialog');
+            const c = document.getElementById('custom-dialog-content');
+            const icon = document.getElementById('dialog-icon');
+            
+            document.getElementById('dialog-title').innerText = title;
+            document.getElementById('dialog-msg').innerText = msg;
+            
+            icon.className = "mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 border bg-orange-500/10 border-orange-500/30 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.3)]";
+            icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-2xl"></i>';
+
+            document.getElementById('dialog-buttons').innerHTML = `
+                <button onclick="closeDialog()" class="flex-1 py-3.5 rounded-xl font-bold text-gray-300 bg-[#2a2931] active:scale-95 transition-transform tracking-wider text-sm">Cancelar</button>
+                <button id="btn-confirm-action" class="flex-1 py-3.5 rounded-xl font-bold text-white bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)] active:scale-95 transition-transform tracking-wider text-sm">Confirmar</button>
+            `;
+
+            document.getElementById('btn-confirm-action').onclick = () => {
+                closeDialog();
+                if(onConfirmCallback) onConfirmCallback();
+            };
+
+            d.classList.remove('hidden'); d.classList.add('flex');
+            setTimeout(() => { d.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10);
+            
+            SoundManager.init(); SoundManager.click();
+        }
+
+        window.closeDialog = function() {
+            const d = document.getElementById('custom-dialog');
+            const c = document.getElementById('custom-dialog-content');
+            d.classList.add('opacity-0'); c.classList.add('scale-95');
+            setTimeout(() => { d.classList.add('hidden'); d.classList.remove('flex'); }, 300);
+        }
+
+        // ================= VALIDADORES =================
+        function isValidCPF(cpf) {
+            cpf = cpf.replace(/[^\d]+/g,'');
+            if(cpf == '' || cpf.length != 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+            let add = 0; for (let i=0; i < 9; i ++) add += parseInt(cpf.charAt(i)) * (10 - i);
+            let rev = 11 - (add % 11); if (rev == 10 || rev == 11) rev = 0; if (rev != parseInt(cpf.charAt(9))) return false;
+            add = 0; for (let i = 0; i < 10; i ++) add += parseInt(cpf.charAt(i)) * (11 - i);
+            rev = 11 - (add % 11); if (rev == 10 || rev == 11) rev = 0; if (rev != parseInt(cpf.charAt(10))) return false; return true;
+        }
+        function isValidCNPJ(cnpj) {
+            cnpj = cnpj.replace(/[^\d]+/g,'');
+            if(cnpj == '' || cnpj.length != 14 || /^(\d)\1{13}$/.test(cnpj)) return false;
+            let tamanho = cnpj.length - 2; let numeros = cnpj.substring(0,tamanho); let digitos = cnpj.substring(tamanho);
+            let soma = 0; let pos = tamanho - 7;
+            for (let i = tamanho; i >= 1; i--) { soma += numeros.charAt(tamanho - i) * pos--; if (pos < 2) pos = 9; }
+            let resultado = soma % 11 < 2 ? 0 : 11 - soma % 11; if (resultado != digitos.charAt(0)) return false;
+            tamanho = tamanho + 1; numeros = cnpj.substring(0,tamanho); soma = 0; pos = tamanho - 7;
+            for (let i = tamanho; i >= 1; i--) { soma += numeros.charAt(tamanho - i) * pos--; if (pos < 2) pos = 9; }
+            resultado = soma % 11 < 2 ? 0 : 11 - soma % 11; if (resultado != digitos.charAt(1)) return false; return true;
+        }
+
+        // ================= SISTEMA DE LOGIN E INICIALIZAÇÃO =================
+        window.loginAdmin = async function(e) {
+            e.preventDefault();
+            SoundManager.init(); // Inicializa o contexto de áudio pelo clique do usuário
+            
+            const u = document.getElementById('admin-user').value;
+            const p = document.getElementById('admin-pass').value;
+            const btn = document.getElementById('btn-login-admin');
+            const originalText = btn.innerHTML;
+
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-lg"></i>`;
+
+            let validUser = localStorage.getItem('nexo_admin_user') || 'LeonhardToledo';
+            let validPass = localStorage.getItem('nexo_admin_pass') || '1315L30h!';
+
+            // Tenta buscar da nuvem sem travar a thread (limite 1.5s)
+            try {
+                const pFetch = getDoc(doc(db, "nexo_admin_auth", "credentials"));
+                const pTimeout = new Promise((resolve) => setTimeout(() => resolve("TIMEOUT"), 1500));
+                const result = await Promise.race([pFetch, pTimeout]);
+                
+                if (result !== "TIMEOUT" && result && result.exists()) {
+                    validUser = result.data().user;
+                    validPass = result.data().pass;
+                    localStorage.setItem('nexo_admin_user', validUser);
+                    localStorage.setItem('nexo_admin_pass', validPass);
+                }
+            } catch(err) { console.warn("Fallback de login acionado."); }
+
+            if (u === validUser && p === validPass) {
+                SoundManager.login();
+                window.registrarAtividade("Administrador Master realizou login no painel.", "fa-user-shield");
+                
+                document.getElementById('admin-login').classList.add('fade-out');
+                setTimeout(() => {
+                    document.getElementById('admin-login').style.display = 'none';
+                    iniciarApp();
+                }, 400);
+            } else {
+                SoundManager.error();
+                btn.innerHTML = 'Acesso Negado'; btn.classList.replace('from-purple-600', 'from-red-600'); btn.classList.replace('to-purple-800', 'to-red-800');
+                setTimeout(() => { btn.innerHTML = originalText; btn.classList.replace('from-red-600', 'from-purple-600'); btn.classList.replace('to-red-800', 'to-purple-800'); }, 2000);
+            }
+        }
+
+        window.salvarCredenciaisAdmin = function() {
+            const u = document.getElementById('cfg-user').value; const p = document.getElementById('cfg-pass').value;
+            if(u && p) {
+                localStorage.setItem('nexo_admin_user', u); localStorage.setItem('nexo_admin_pass', p);
+                try { setDoc(doc(db, "nexo_admin_auth", "credentials"), { user: u, pass: p }); } catch(e) {}
+                
+                window.registrarAtividade("Credenciais Root do sistema atualizadas.", "fa-key");
+                showAlert("Sucesso", "As novas credenciais foram salvas e já estão ativas.", "success");
+                fecharModalConfig();
+            } else { showAlert("Atenção", "Preencha ambos os campos para atualizar.", "warning"); }
+        }
+
+        window.logoutAdmin = function() {
+            if(unsubscribeEmpresas) unsubscribeEmpresas();
+            if(unsubscribeAtividades) unsubscribeAtividades();
+            document.getElementById('main-app').classList.add('hidden'); document.getElementById('main-app').classList.remove('flex');
+            const loginScreen = document.getElementById('admin-login');
+            loginScreen.style.display = 'flex'; loginScreen.classList.remove('fade-out');
+            document.getElementById('admin-user').value = ''; document.getElementById('admin-pass').value = '';
+        }
+
+        window.iniciarApp = function() {
+            const splash = document.getElementById('splash-screen'); const mainApp = document.getElementById('main-app');
+            splash.classList.remove('hidden'); splash.classList.add('flex');
+            setTimeout(() => {
+                splash.classList.add('fade-out');
+                setTimeout(() => {
+                    splash.style.display = 'none'; mainApp.classList.remove('hidden'); mainApp.classList.add('flex');
+                    escutarAtividades();
+                    escutarEmpresasEmTempoReal();
+                }, 400);
+            }, 1000);
+        }
+
+        // ================= CONTROLE DOS MODAIS =================
+        function abrirModal(idModal, idContent) {
+            SoundManager.init(); SoundManager.click();
+            const m = document.getElementById(idModal); const c = document.getElementById(idContent);
+            m.classList.remove('hidden'); m.classList.add('flex');
+            setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('translate-y-full'); }, 10);
+        }
+        function fecharModal(idModal, idContent, callback) {
+            const m = document.getElementById(idModal); const c = document.getElementById(idContent);
+            m.classList.add('opacity-0'); c.classList.add('translate-y-full');
+            setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); if(callback) callback(); }, 300);
+        }
+
+        window.abrirModalCadastro = () => abrirModal('modal-cliente', 'modal-content-cadastro');
+        window.fecharModalCadastro = () => fecharModal('modal-cliente', 'modal-content-cadastro');
+        
+        window.abrirModalComunicado = () => abrirModal('modal-comunicado', 'modal-content-comunicado');
+        window.fecharModalComunicado = () => fecharModal('modal-comunicado', 'modal-content-comunicado');
+
+        window.abrirModalConfig = () => abrirModal('modal-config', 'modal-content-config');
+        window.fecharModalConfig = () => fecharModal('modal-config', 'modal-content-config');
+
+        window.abrirModalGerenciar = function(empDataStr) {
+            const emp = JSON.parse(decodeURIComponent(empDataStr));
+            clienteSelecionado = emp;
+            document.getElementById('manage-nome').innerText = emp.nomeFantasia; 
+            document.getElementById('manage-id').innerText = `ID: ${emp.id.substring(0,8).toUpperCase()}`;
+            document.getElementById('edit-plano').value = emp.plano || 'Mensal';
+            document.getElementById('edit-valor').value = emp.valorMensalidade || '';
+            document.getElementById('edit-venc').value = emp.vencimento || '';
+            atualizarBotoesGerenciamento();
+            abrirModal('modal-gerenciar', 'modal-content-gerenciar');
+        }
+        window.fecharModalGerenciar = () => fecharModal('modal-gerenciar', 'modal-content-gerenciar', () => { clienteSelecionado = null; });
+
+        function atualizarBotoesGerenciamento() {
+            const btnStatus = document.getElementById('btn-status'); const btnPagamento = document.getElementById('btn-pagamento');
+            if(clienteSelecionado.status === 'Ativo') {
+                btnStatus.innerHTML = "<i class='fa-solid fa-lock-open mr-1'></i> Acesso Liberado";
+                btnStatus.className = "w-full py-2 rounded-lg text-xs font-bold transition-all shadow-md bg-green-500/20 text-green-400 border border-green-500/50";
+            } else {
+                btnStatus.innerHTML = "<i class='fa-solid fa-lock mr-1'></i> Acesso Bloqueado";
+                btnStatus.className = "w-full py-2 rounded-lg text-xs font-bold transition-all shadow-md bg-red-500/20 text-red-400 border border-red-500/50";
+            }
+
+            if(clienteSelecionado.pagamento === 'Em dia') {
+                btnPagamento.innerHTML = "<i class='fa-solid fa-check mr-1'></i> Paga (Em Dia)";
+                btnPagamento.className = "w-full py-2 rounded-lg text-xs font-bold transition-all shadow-md bg-blue-500/20 text-blue-400 border border-blue-500/50";
+            } else {
+                btnPagamento.innerHTML = "<i class='fa-solid fa-triangle-exclamation mr-1'></i> Atrasada / Pend.";
+                btnPagamento.className = "w-full py-2 rounded-lg text-xs font-bold transition-all shadow-md bg-orange-500/20 text-orange-400 border border-orange-500/50";
+            }
+        }
+
+        // ================= FUNÇÕES CRUD FIREBASE =================
+        window.toggleStatus = function() {
+            const novo = clienteSelecionado.status === 'Ativo' ? 'Inativo' : 'Ativo';
+            try { 
+                updateDoc(doc(db, "empresas", clienteSelecionado.id), { status: novo }); 
+                window.registrarAtividade(`Acesso FRP da empresa <b>${clienteSelecionado.nomeFantasia}</b> alterado para ${novo}.`, novo === 'Ativo' ? 'fa-lock-open' : 'fa-lock');
+                clienteSelecionado.status = novo; 
+                atualizarBotoesGerenciamento(); 
+                showAlert('Status Atualizado', `Acesso do cliente agora está: ${novo}`, 'success'); 
+            } catch(e){ showAlert('Erro', e.message, 'error'); }
+        }
+
+        window.togglePagamento = function() {
+            const novo = clienteSelecionado.pagamento === 'Em dia' ? 'Pendente' : 'Em dia';
+            try { 
+                updateDoc(doc(db, "empresas", clienteSelecionado.id), { pagamento: novo }); 
+                window.registrarAtividade(`Pagamento de <b>${clienteSelecionado.nomeFantasia}</b> marcado como ${novo}.`, 'fa-dollar-sign');
+                clienteSelecionado.pagamento = novo; 
+                atualizarBotoesGerenciamento(); 
+            } catch(e){ showAlert('Erro', e.message, 'error'); }
+        }
+
+        window.salvarAssinatura = function() {
+            const plano = document.getElementById('edit-plano').value; const valor = parseFloat(document.getElementById('edit-valor').value) || 0; const venc = document.getElementById('edit-venc').value;
+            try {
+                updateDoc(doc(db, "empresas", clienteSelecionado.id), { plano, valorMensalidade: valor, vencimento: venc });
+                window.registrarAtividade(`Assinatura FRP de <b>${clienteSelecionado.nomeFantasia}</b> atualizada (Plano: ${plano}).`, 'fa-file-signature');
+                showAlert("Atualizado", "Assinatura sincronizada com o FRP do cliente com sucesso!", "success");
+            } catch(e) { showAlert("Erro", e.message, "error"); }
+        }
+
+        window.confirmarExclusao = function() {
+            showConfirm("Deletar Tenant", `Tem certeza absoluta? Isso apagará permanentemente os dados da empresa "${clienteSelecionado.nomeFantasia}".`, async () => {
+                try { 
+                    await deleteDoc(doc(db, "empresas", clienteSelecionado.id)); 
+                    window.registrarAtividade(`Sistema FRP da empresa <b>${clienteSelecionado.nomeFantasia}</b> foi excluído definitivamente.`, 'fa-trash');
+                    fecharModalGerenciar(); 
+                    showAlert('Excluído', 'Empresa apagada da base de dados.', 'success'); 
+                } catch(e){ showAlert('Erro', e.message, 'error'); }
+            });
+        }
+
+        window.enviarNotificacaoIndividual = function() {
+            const t = document.getElementById('notif-titulo').value; const m = document.getElementById('notif-msg').value;
+            if(!t || !m) return showAlert('Atenção', 'Preencha o título e a mensagem para enviar o push.', 'warning');
+            try {
+                addDoc(collection(db, "empresas", clienteSelecionado.id, "notificacoes"), { titulo: t, mensagem: m, data: new Date().toISOString(), lida: false });
+                window.registrarAtividade(`Notificação enviada direto para <b>${clienteSelecionado.nomeFantasia}</b>.`, 'fa-comment-dots');
+                showAlert("Enviado", "O aviso já está disponível no sininho de notificações do cliente.", "success");
+                document.getElementById('notif-titulo').value=''; document.getElementById('notif-msg').value='';
+            } catch(e) { showAlert('Erro', e.message, 'error'); }
+        }
+
+        window.enviarComunicadoGeral = async function() {
+            const t = document.getElementById('com-titulo').value; const m = document.getElementById('com-msg').value;
+            if(!t || !m) return showAlert("Atenção", "Preencha o título e a mensagem do comunicado.", "warning");
+            
+            try {
+                const qs = await getDocs(collection(db, "empresas")); let c = 0;
+                qs.forEach((emp) => { addDoc(collection(db, "empresas", emp.id, "notificacoes"), { titulo: t, mensagem: m, data: new Date().toISOString(), lida: false }); c++; });
+                window.registrarAtividade(`Comunicado oficial em massa disparado para ${c} empresas.`, 'fa-bullhorn');
+                showAlert("Disparo Concluído", `Comunicado oficial enviado para ${c} empresas!`, "success"); 
+                document.getElementById('com-titulo').value=''; document.getElementById('com-msg').value=''; fecharModalComunicado();
+            } catch(e) { showAlert('Erro', e.message, 'error'); }
+        }
+
+        document.getElementById('form-novo-cliente').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const docInput = document.getElementById('doc-empresa').value.replace(/\D/g, '');
+            if(docInput.length === 11) { if(!isValidCPF(docInput)) return showAlert('Documento Inválido', 'O CPF informado é falso ou está incorreto.', 'warning'); } 
+            else if(docInput.length === 14) { if(!isValidCNPJ(docInput)) return showAlert('Documento Inválido', 'O CNPJ informado é falso ou está incorreto.', 'warning'); } 
+            else { return showAlert('Documento Inválido', 'Digite um CPF (11) ou CNPJ (14) com a quantidade correta de números.', 'warning'); }
+
+            const btn = document.getElementById('btn-cadastrar'); const original = btn.innerHTML; btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Implantando Sistema...`;
+            const nomeF = document.getElementById('nome-empresa').value;
+
+            try {
+                const cred = await createUserWithEmailAndPassword(authSecundario, document.getElementById('email-cliente').value, document.getElementById('senha-cliente').value);
+                const docRef = await addDoc(collection(db, "empresas"), {
+                    nomeFantasia: nomeF, documento: docInput, telefone: document.getElementById('tel-empresa').value,
+                    plano: document.getElementById('plano-empresa').value, valorMensalidade: parseFloat(document.getElementById('valor-empresa').value)||0, vencimento: document.getElementById('venc-empresa').value,
+                    status: "Ativo", pagamento: "Em dia", dataCriacao: serverTimestamp()
+                });
+                await setDoc(doc(db, "usuarios", cred.user.uid), { email: document.getElementById('email-cliente').value, empresaId: docRef.id, perfil: "admin_cliente" });
+                await signOut(authSecundario);
+                
+                window.registrarAtividade(`Novo ambiente FRP gerado com sucesso para a empresa <b>${nomeF}</b>.`, 'fa-server');
+
+                fecharModalCadastro(); document.getElementById('form-novo-cliente').reset(); btn.innerHTML = original;
+                showAlert("Tenant Criado", "O sistema do cliente foi gerado e já está online para uso.", "success");
+            } catch (error) { showAlert("Falha no Deploy", error.message, 'error'); btn.innerHTML = original; }
+        });
+
+        // ================= SINCRONIZAÇÃO DO DASHBOARD & AUTOMAÇÃO =================
+        function escutarEmpresasEmTempoReal() {
+            unsubscribeEmpresas = onSnapshot(collection(db, "empresas"), (snapshot) => {
+                let total = 0, ativas = 0, pendentes = 0, fat = 0;
+                const container = document.getElementById('lista-empresas');
+                container.innerHTML = "";
+                let emps =[];
+
+                snapshot.forEach((documento) => {
+                    const emp = documento.data(); const id = documento.id;
+                    
+                    // AUTOMAÇÃO DE BLOQUEIO (+24 HORAS APÓS O VENCIMENTO)
+                    if (emp.plano !== 'Vitalício' && emp.vencimento) {
+                        const hoje = new Date();
+                        // Cria a data à meia-noite e adiciona 48 horas para cobrir o dia do vencimento + as 24h exatas de tolerância exigidas
+                        const venc = new Date(emp.vencimento + 'T00:00:00');
+                        venc.setHours(48);
+                        
+                        if (hoje >= venc) {
+                            let precisaAtualizar = false;
+                            let updates = {};
+                            
+                            if (emp.status === 'Ativo') { updates.status = 'Inativo'; precisaAtualizar = true; }
+                            if (emp.pagamento === 'Em dia') { updates.pagamento = 'Pendente'; precisaAtualizar = true; }
+                            
+                            if (precisaAtualizar) {
+                                updateDoc(doc(db, "empresas", id), updates).catch(e => console.error("Erro na Automação:", e));
+                                window.registrarAtividade(`Automação: FRP da empresa <b>${emp.nomeFantasia}</b> bloqueado por falta de pagamento.`, 'fa-robot');
+                                emp.status = 'Inativo'; 
+                                emp.pagamento = 'Pendente';
+                            }
+                        }
+                    }
+
+                    total++; 
+                    if(emp.status === 'Ativo') { ativas++; fat += parseFloat(emp.valorMensalidade||0); }
+                    if(emp.pagamento !== 'Em dia') pendentes++;
+                    emps.push({id, ...emp});
+                });
+
+                // Atualizando os Grids do Dashboard
+                document.getElementById('dash-total').innerText = total;
+                document.getElementById('dash-ativas').innerText = ativas;
+                document.getElementById('dash-ativas-badge').innerText = total > 0 ? Math.round((ativas/total)*100)+'%' : '0%';
+                
+                document.getElementById('dash-pendentes').innerText = pendentes;
+                const pBadge = document.getElementById('dash-pendentes-badge');
+                pBadge.innerText = pendentes;
+                if(pendentes > 0) { pBadge.classList.replace('bg-orange-500/20', 'bg-red-500'); pBadge.classList.replace('text-orange-400', 'text-white'); pBadge.classList.add('animate-pulse'); }
+                else { pBadge.classList.replace('bg-red-500', 'bg-orange-500/20'); pBadge.classList.replace('text-white', 'text-orange-400'); pBadge.classList.remove('animate-pulse'); }
+                
+                document.getElementById('dash-faturamento').innerText = fmtMoeda(fat);
+
+                if(emps.length === 0) { container.innerHTML = `<div class="text-center py-10 text-gray-600 font-bold text-xs"><i class="fa-solid fa-ghost text-4xl mb-3 block opacity-30"></i>Nenhum tenant cadastrado.</div>`; return; }
+
+                emps.sort((a,b) => { return (b.dataCriacao?.toMillis() || 0) - (a.dataCriacao?.toMillis() || 0); });
+
+                // Renderizando a Lista de Empresas
+                emps.forEach(emp => {
+                    const isOnline = emp.lastOnline && (Date.now() - emp.lastOnline < 120000);
+                    const borda = emp.status === 'Ativo' ? 'border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.15)]' : 'border-red-500/30 opacity-70';
+                    const stColor = emp.status === 'Ativo' ? 'text-green-400 bg-green-400/10' : 'text-red-400 bg-red-400/10';
+                    const pgColor = emp.pagamento === 'Em dia' ? 'text-emerald-400 bg-emerald-400/10 border-emerald-500/20' : 'text-orange-400 bg-orange-400/10 border-orange-500/20 shadow-[0_0_10px_rgba(249,115,22,0.2)]';
+                    
+                    // CONTADOR DE DIAS
+                    let tagDias = '';
+                    if (emp.plano === 'Vitalício') {
+                        tagDias = `<span class="text-[8px] text-gray-400 font-bold uppercase tracking-widest ml-2 border border-gray-600 px-1.5 py-0.5 rounded opacity-80">Vitalício</span>`;
+                    } else if (emp.vencimento) {
+                        const hoje = new Date(); hoje.setHours(0,0,0,0);
+                        const venc = new Date(emp.vencimento + 'T00:00:00'); venc.setHours(0,0,0,0);
+                        const diffDays = Math.ceil((venc - hoje) / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays < 0) { tagDias = `<span class="text-[8px] text-red-400 bg-red-400/10 font-bold uppercase tracking-widest ml-2 border border-red-500/20 px-1.5 py-0.5 rounded">Vencido</span>`; }
+                        else if (diffDays === 0) { tagDias = `<span class="text-[8px] text-orange-400 bg-orange-400/10 font-bold uppercase tracking-widest ml-2 border border-orange-500/20 px-1.5 py-0.5 rounded animate-pulse">Vence Hoje</span>`; }
+                        else { tagDias = `<span class="text-[8px] text-emerald-400 bg-emerald-400/10 font-bold uppercase tracking-widest ml-2 border border-emerald-500/20 px-1.5 py-0.5 rounded">Faltam ${diffDays} Dias</span>`; }
+                    } else {
+                        tagDias = `<span class="text-[8px] text-gray-500 font-bold uppercase tracking-widest ml-2 border border-gray-600 px-1.5 py-0.5 rounded opacity-50">S/ Data</span>`;
+                    }
+
+                    const empDataStr = encodeURIComponent(JSON.stringify(emp));
+
+                    container.innerHTML += `
+                        <div onclick="abrirModalGerenciar('${empDataStr}')" class="glass-card p-4 cursor-pointer hover:bg-white/5 transition-all ${borda} flex flex-col justify-between">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex-1 pr-2">
+                                    <h3 class="text-base font-black text-white leading-tight truncate flex items-center gap-2">
+                                        ${emp.nomeFantasia}
+                                        ${isOnline ? '<span class="flex h-2 w-2 relative"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>' : ''}
+                                    </h3>
+                                    <p class="text-[9px] text-gray-400 font-mono mt-1 tracking-widest uppercase">ID: ${emp.id.substring(0,8)}</p>
+                                </div>
+                                <div class="flex flex-col items-end gap-1.5 shrink-0">
+                                    <div class="flex items-center">
+                                        <span class="${stColor} px-2 py-0.5 rounded border border-current text-[9px] font-bold uppercase tracking-widest flex items-center gap-1 shrink-0"><i class="fa-solid ${emp.status==='Ativo'?'fa-check':'fa-lock'}"></i> ${emp.status}</span>
+                                        ${tagDias}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-end border-t border-[#2a2931] pt-3">
+                                <div>
+                                    <p class="text-[8px] text-gray-500 font-bold uppercase tracking-widest mb-1">Pagamento</p>
+                                    <span class="${pgColor} px-2 py-0.5 rounded border text-[9px] font-bold tracking-widest uppercase">${emp.pagamento}</span>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[9px] text-purple-400 font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1 justify-end"><i class="fa-solid fa-crown text-[8px]"></i> ${emp.plano||'Padrão'}</p>
+                                    <span class="text-gray-400 text-xs font-semibold">Editar <i class="fa-solid fa-chevron-down ml-1"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+    </script>
+</body>
+</html>
