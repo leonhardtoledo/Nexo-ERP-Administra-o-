@@ -1,0 +1,22 @@
+{
+  "name": "Nexo ERP Pro",
+  "short_name": "Nexo",
+  "description": "Sistema de Gestão de Excursões e Viagens",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0f0e13",
+  "theme_color": "#0f0e13",
+  "icons":[
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
